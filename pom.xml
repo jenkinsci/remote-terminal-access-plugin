@@ -17,6 +17,12 @@
       <artifactId>ajaxterm4j</artifactId>
       <version>1.2-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.modules</groupId>
+      <artifactId>sshd</artifactId>
+      <version>1.4</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <repositories>
