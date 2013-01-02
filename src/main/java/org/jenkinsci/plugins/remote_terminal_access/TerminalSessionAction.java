@@ -36,11 +36,11 @@ public class TerminalSessionAction extends Environment implements Action {
     }
 
     public String getIconFileName() {
-        return "terminal.png";
+        return "monitor.png";
     }
 
     public String getDisplayName() {
-        return "Launch Interactive Terminal";
+        return "Interactive Terminal";
     }
 
     public String getUrlName() {

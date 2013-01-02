@@ -23,6 +23,7 @@ l.layout {
                 f.submit(value:_("Launch another terminal"))
             }
         } else {
+            p(style:"margin:1em;", _("blurb"))
             form(method:"POST",action:"startSession") {
                 f.submit(value:_("Launch a terminal"))
             }
