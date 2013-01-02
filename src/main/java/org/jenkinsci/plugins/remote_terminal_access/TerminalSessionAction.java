@@ -8,8 +8,13 @@ import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Environment;
+import hudson.model.Job;
 import hudson.model.Result;
+import hudson.model.Run;
 import hudson.remoting.Callable;
+import hudson.security.Permission;
+import hudson.security.PermissionGroup;
+import hudson.security.PermissionScope;
 import org.kohsuke.ajaxterm.PtyProcessBuilder;
 import org.kohsuke.ajaxterm.Session;
 import org.kohsuke.stapler.HttpResponse;
@@ -60,7 +65,10 @@ public class TerminalSessionAction extends Environment implements Action {
     }
 
     public String getDisplayName() {
-        return "Interactive Terminal";
+        if (build.hasPermission(ACCESS))
+            return "Interactive Terminal";
+        else
+            return null;    // hidden for users who don't have the permission
     }
 
     public String getUrlName() {
@@ -86,6 +94,8 @@ public class TerminalSessionAction extends Environment implements Action {
      */
     @RequirePOST
     public synchronized HttpResponse doRestartSession() throws IOException, InterruptedException {
+        build.checkPermission(ACCESS);
+
         if (session!=null)
             session.interrupt();
 
@@ -100,6 +110,8 @@ public class TerminalSessionAction extends Environment implements Action {
      * Handles ajaxterm update.
      */
     public void doU(StaplerRequest req, StaplerResponse rsp) throws IOException, InterruptedException {
+        build.checkPermission(ACCESS);
+
         Session s = session; // capture for consistency
         if (s!=null)
             s.handleUpdate(req, rsp);
@@ -124,4 +136,8 @@ public class TerminalSessionAction extends Environment implements Action {
         }
         private static final long serialVersionUID = 1L;
     }
+
+    public static final PermissionGroup PERMISSIONS = new PermissionGroup(Run.class, Messages._TerminalSessionAction_Permissions_Title());
+    public static final Permission ACCESS = new Permission(PERMISSIONS,"Access",Messages._TerminalSessionAction_AccessPermission_Description(), Job.CONFIGURE, PermissionScope.RUN);
+
 }
