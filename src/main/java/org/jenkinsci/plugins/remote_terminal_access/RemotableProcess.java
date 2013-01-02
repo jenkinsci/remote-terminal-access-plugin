@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.remote_terminal_access;
 import hudson.remoting.Channel;
 import hudson.remoting.RemoteInputStream;
 import hudson.remoting.RemoteOutputStream;
+import org.kohsuke.ajaxterm.ProcessWithPty;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,7 +19,7 @@ import java.io.Serializable;
  * @author Kohsuke Kawaguchi
  */
 public class RemotableProcess extends DelegatingProcess implements Serializable {
-    public RemotableProcess(Process delegate) {
+    public RemotableProcess(ProcessWithPty delegate) {
         super(delegate);
     }
 
@@ -32,7 +33,7 @@ public class RemotableProcess extends DelegatingProcess implements Serializable 
 }
 
 final class RemotedProcess extends DelegatingProcess implements Serializable {
-    RemotedProcess(Process delegate) {
+    RemotedProcess(ProcessWithPty delegate) {
         super(delegate);
     }
 
