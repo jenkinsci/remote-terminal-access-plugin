@@ -22,6 +22,10 @@ import java.io.File;
 import java.io.IOException;
 
 /**
+ * {@link Action} that attach to {@link AbstractBuild} to show the "interactive terminal" option in the UI.
+ *
+ * Also an {@link Environment} to make the build hang while the terminal is active.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class TerminalSessionAction extends Environment implements Action {
