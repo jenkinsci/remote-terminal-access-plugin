@@ -3,10 +3,12 @@ package org.jenkinsci.plugins.remote_terminal_access;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Environment;
+import hudson.model.Result;
 import hudson.remoting.Callable;
 import org.kohsuke.ajaxterm.PtyProcessBuilder;
 import org.kohsuke.ajaxterm.Session;
@@ -27,12 +29,26 @@ public class TerminalSessionAction extends Environment implements Action {
     private final Launcher launcher;
     private final BuildListener listener;
 
-    private Session session;
+    private volatile Session session;
 
     public TerminalSessionAction(AbstractBuild build, Launcher launcher, BuildListener listener) {
         this.build = build;
         this.launcher = launcher;
         this.listener = listener;
+    }
+
+    @Override
+    public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
+        if (hasSession() && build.getResult()!=Result.ABORTED) {// if the build is already aborted, don't hang any further
+            listener.getLogger().println("Waiting for "+
+                    HyperlinkNote.encodeTo("./"+getUrlName(),"the interactive terminal")+" to exit");
+            do {
+                Session s = session; // capture for consistency
+                if (s!=null)
+                    s.join();
+            } while(hasSession());
+        }
+        return true;
     }
 
     public String getIconFileName() {
@@ -55,7 +71,7 @@ public class TerminalSessionAction extends Environment implements Action {
      * Starts a new terminal session if non exists.
      */
     @RequirePOST
-    public synchronized HttpResponse doStartSession() throws IOException, InterruptedException {
+    public HttpResponse doStartSession() throws IOException, InterruptedException {
         if (hasSession())
             return HttpResponses.redirectToDot();
         return doRestartSession();
@@ -80,8 +96,9 @@ public class TerminalSessionAction extends Environment implements Action {
      * Handles ajaxterm update.
      */
     public void doU(StaplerRequest req, StaplerResponse rsp) throws IOException, InterruptedException {
-        if (session!=null)
-            session.handleUpdate(req, rsp);
+        Session s = session; // capture for consistency
+        if (s!=null)
+            s.handleUpdate(req, rsp);
         else
             rsp.setStatus(404);
     }
