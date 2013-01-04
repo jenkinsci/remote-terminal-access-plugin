@@ -99,8 +99,10 @@ public class TerminalSessionAction extends Environment implements Action {
         if (session!=null)
             session.interrupt();
 
+        EnvVars env = build.getEnvironment(listener);
+        env.put("TERM",Session.getAjaxTerm());
         IProcess proc = launcher.getChannel().call(
-                new SessionFactoryTask(build.getEnvironment(listener),build.getWorkspace()));
+                new SessionFactoryTask(env,build.getWorkspace()));
         session = new Session(80,25,new ProcessAdapter(proc));
 
         return HttpResponses.redirectToDot();

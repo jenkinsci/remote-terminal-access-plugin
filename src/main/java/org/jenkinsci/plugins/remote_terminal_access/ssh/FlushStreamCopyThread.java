@@ -1,10 +1,17 @@
 package org.jenkinsci.plugins.remote_terminal_access.ssh;
 
+import hudson.util.StreamCopyThread;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
+ * {@link StreamCopyThread} variant that flushes the output stream.
+ *
+ * MINA's OutputStream does buffering, and {@link Process#getOutputStream()} talks about buffering, too,
+ * so in both directions we use this to ensure bytes are delivered in a timely fashion.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class FlushStreamCopyThread extends Thread {

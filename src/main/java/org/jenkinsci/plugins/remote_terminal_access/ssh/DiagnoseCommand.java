@@ -33,8 +33,8 @@ public class DiagnoseCommand extends AsynchronousCommand {
                         int w = Integer.parseInt(env.getEnv().get(Environment.ENV_COLUMNS));
                         int h = Integer.parseInt(env.getEnv().get(Environment.ENV_LINES));
                         proc.setWindowSize(w,h);
-                    }
-                    proc.kill(signal.getNumeric());
+                    } else
+                        proc.kill(signal.getNumeric());
                 } catch (IOException e) {
                     LOGGER.log(Level.WARNING, "Failed to send signal to " + proc, e);
                 }
@@ -58,12 +58,12 @@ public class DiagnoseCommand extends AsynchronousCommand {
                 pb.commands("/bin/bash","-i");
             else
                 pb.commands(cmds);
-            pb.envs(env.getEnv());
+            pb.envs(env.getEnv()); // this include terminal
 //            pb.pwd(new File(pwd.getRemote()));
             proc = pb.forkWithHelper();
 
-            new StreamCopyThread(getCmdLine()+" stdout pump",proc.getInputStream(),getOutputStream(),true).start();
-            new StreamCopyThread(getCmdLine()+" stdin pump", getInputStream(),proc.getOutputStream(),true).start();
+            new FlushStreamCopyThread(getCmdLine()+" stdout pump",proc.getInputStream(),getOutputStream(),true).start();
+            new FlushStreamCopyThread(getCmdLine()+" stdin pump", getInputStream(),proc.getOutputStream(),true).start();
 
             return proc.waitFor();
         } else {
