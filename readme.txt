@@ -3,8 +3,9 @@ In Mina, req-pty server-side handling is in ChannelSession.handlePtyReq.
 This parses the command and updates Environment, but doesn't actually allocate a terminal.
 
 Similarly, ChannelSession.handleWindowChange is needed to handle the client window size change.
-
+    -> turns out can be handled as a signal
 also, handleSignal.
+    -> turns out can be handled as a signal
 
 then handleShell or handleExec.
 
