@@ -11,10 +11,12 @@ import hudson.model.Environment;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.remoting.Callable;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
+import org.kohsuke.ajaxterm.ProcessWithPty;
 import org.kohsuke.ajaxterm.PtyProcessBuilder;
 import org.kohsuke.ajaxterm.Session;
 import org.kohsuke.stapler.HttpResponse;
@@ -99,11 +101,8 @@ public class TerminalSessionAction extends Environment implements Action {
         if (session!=null)
             session.interrupt();
 
-        EnvVars env = build.getEnvironment(listener);
-        env.put("TERM",Session.getAjaxTerm());
-        IProcess proc = launcher.getChannel().call(
-                new SessionFactoryTask(env,build.getWorkspace()));
-        session = new Session(80,25,new ProcessAdapter(proc));
+        ProcessWithPty p = new ProcessWithPtyLauncher().shell().launch(build,listener,Session.getAjaxTerm());
+        session = new Session(80,25, p);
 
         return HttpResponses.redirectToDot();
     }
@@ -119,24 +118,6 @@ public class TerminalSessionAction extends Environment implements Action {
             s.handleUpdate(req, rsp);
         else
             rsp.setStatus(404);
-    }
-
-    private static class SessionFactoryTask implements Callable<IProcess, IOException> {
-        private final EnvVars envs;
-        private final FilePath pwd;
-        public SessionFactoryTask(EnvVars envs, FilePath pwd) {
-            this.envs = envs;
-            this.pwd = pwd;
-        }
-
-        public IProcess call() throws IOException {
-            PtyProcessBuilder pb = new PtyProcessBuilder();
-            pb.commands("/bin/bash","-i");
-            pb.envs(envs);
-            pb.pwd(new File(pwd.getRemote()));
-            return new RemotableProcess(pb.forkWithHelper());
-        }
-        private static final long serialVersionUID = 1L;
     }
 
     public static final PermissionGroup PERMISSIONS = new PermissionGroup(Run.class, Messages._TerminalSessionAction_Permissions_Title());
