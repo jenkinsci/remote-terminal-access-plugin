@@ -65,24 +65,26 @@ public class DiagnoseCommand extends AsynchronousCommand {
             new FlushStreamCopyThread(getCmdLine()+" stdout pump",proc.getInputStream(),getOutputStream(),true).start();
             new FlushStreamCopyThread(getCmdLine()+" stdin pump", getInputStream(),proc.getOutputStream(),true).start();
 
-            return proc.waitFor();
+            try {
+                int exit = proc.waitFor();
+                proc = null;
+                return exit;
+            } finally {
+                try {// on abnormal termination, kill the process
+                    if (proc!=null) {
+                        proc.kill(9);
+                        proc.destroy();
+                    }
+                    proc = null;
+                } catch (IOException e) {
+                    LOGGER.log(Level.WARNING, "Failed to send signal to " + proc, e);
+                }
+            }
         } else {
             String msg = "No tty. Please run ssh with the -t option";
             OutputStream err = getErrorStream();
             err.write(msg.getBytes());
             return 1;
-        }
-    }
-
-    public void destroy() {
-        try {
-            if (proc!=null) {
-                proc.kill(9);
-                proc.destroy();
-            }
-            proc = null;
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to send signal to " + proc, e);
         }
     }
 
