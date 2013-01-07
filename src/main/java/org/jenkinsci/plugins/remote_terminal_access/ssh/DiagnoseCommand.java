@@ -20,6 +20,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * SSH command that connects to the workspace of the job.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class DiagnoseCommand extends AsynchronousCommand {
