@@ -1,7 +1,5 @@
 package org.jenkinsci.plugins.remote_terminal_access;
 
-import hudson.EnvVars;
-import hudson.FilePath;
 import hudson.Launcher;
 import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
@@ -11,13 +9,10 @@ import hudson.model.Environment;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
-import hudson.model.TaskListener;
-import hudson.remoting.Callable;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
 import org.kohsuke.ajaxterm.ProcessWithPty;
-import org.kohsuke.ajaxterm.PtyProcessBuilder;
 import org.kohsuke.ajaxterm.Session;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
@@ -25,7 +20,6 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
-import java.io.File;
 import java.io.IOException;
 
 /**

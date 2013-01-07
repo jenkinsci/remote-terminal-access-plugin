@@ -10,6 +10,7 @@ import org.apache.sshd.server.SignalListener;
 import org.jenkinsci.main.modules.sshd.AsynchronousCommand;
 import org.jenkinsci.main.modules.sshd.SshCommandFactory.CommandLine;
 import org.jenkinsci.plugins.remote_terminal_access.ProcessWithPtyLauncher;
+import org.jenkinsci.plugins.remote_terminal_access.TerminalSessionAction;
 import org.kohsuke.ajaxterm.ProcessWithPty;
 
 import java.io.IOException;
@@ -67,6 +68,8 @@ public class DiagnoseCommand extends AsynchronousCommand {
             AbstractBuild<?,?> build = p.getLastBuild();
             if (build==null)
                 return die("No build found for job: "+jobname);
+
+            build.checkPermission(TerminalSessionAction.ACCESS);
 
             Environment env = getEnvironment();
             String w = env.getEnv().get(Environment.ENV_COLUMNS);
