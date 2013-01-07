@@ -11,6 +11,9 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
+  <name>Remote Terminal Access plugin</name>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Remote+Terminal+Access+Plugin</url>
+
   <dependencies>
     <dependency>
       <groupId>org.kohsuke.ajaxterm4j</groupId>
@@ -38,4 +41,11 @@
       <url>http://repo.jenkins-ci.org/public/</url>
     </pluginRepository>
   </pluginRepositories>
+
+  <scm>
+    <connection>scm:git:git://github.com/jenkinsci/${project.artifctId}-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
+    <url>http://github.com/jenkinsci/${project.artifactId}-plugin</url>
+    <tag>HEAD</tag>
+  </scm>
 </project>
