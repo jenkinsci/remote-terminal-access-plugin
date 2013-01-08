@@ -12,6 +12,7 @@ import hudson.model.Run;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
+import jenkins.model.Jenkins;
 import org.kohsuke.ajaxterm.ProcessWithPty;
 import org.kohsuke.ajaxterm.Session;
 import org.kohsuke.stapler.HttpResponse;
@@ -115,6 +116,5 @@ public class TerminalSessionAction extends Environment implements Action {
     }
 
     public static final PermissionGroup PERMISSIONS = new PermissionGroup(Run.class, Messages._TerminalSessionAction_Permissions_Title());
-    public static final Permission ACCESS = new Permission(PERMISSIONS,"Access",Messages._TerminalSessionAction_AccessPermission_Description(), Job.CONFIGURE, PermissionScope.RUN);
-
+    public static final Permission ACCESS = new Permission(PERMISSIONS,"Access",Messages._TerminalSessionAction_AccessPermission_Description(), Jenkins.ADMINISTER, PermissionScope.RUN);
 }
