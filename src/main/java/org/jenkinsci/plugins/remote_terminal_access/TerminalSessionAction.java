@@ -45,8 +45,8 @@ public class TerminalSessionAction extends Environment implements Action {
     @Override
     public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
         if (hasSession() && build.getResult()!=Result.ABORTED) {// if the build is already aborted, don't hang any further
-            listener.getLogger().println("Waiting for "+
-                    HyperlinkNote.encodeTo("./"+getUrlName(),"the interactive terminal")+" to exit");
+            String url = HyperlinkNote.encodeTo("./" + getUrlName(), Messages.TerminalSessionAction_LinkedText());
+            listener.getLogger().println(Messages.TerminalSessionAction_WaitingForTerminal("Waiting for "+ url +" to exit"));
             do {
                 Session s = session; // capture for consistency
                 if (s!=null)
@@ -62,13 +62,13 @@ public class TerminalSessionAction extends Environment implements Action {
 
     public String getDisplayName() {
         if (build.hasPermission(ACCESS))
-            return "Interactive Terminal";
+            return Messages.TerminalSessionAction_DisplayName();
         else
             return null;    // hidden for users who don't have the permission
     }
 
     public String getUrlName() {
-        return "interactive-terminal";
+        return "interactiveTerminal";
     }
 
     public synchronized boolean hasSession() {
