@@ -120,6 +120,7 @@ public class DiagnoseCommand extends AsynchronousCommand {
     private int die(String msg) throws IOException {
         OutputStream err = getErrorStream();
         err.write(msg.getBytes());
+        err.write(0x0A);
         return 1;
     }
 

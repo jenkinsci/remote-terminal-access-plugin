@@ -15,6 +15,8 @@ public class CommandFactoryImpl extends SshCommandFactory {
         // TODO: command name
         if (cmd.equals("diagnose"))
             return new DiagnoseCommand(commandLine);
+        if (cmd.equals("diagnose-tunnel"))
+            return new DiagnoseTunnelCommand(commandLine);
         return null;
     }
 }
