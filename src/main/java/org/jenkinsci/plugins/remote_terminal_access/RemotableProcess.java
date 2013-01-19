@@ -49,7 +49,7 @@ final class RemotedProcess extends DelegatingProcess implements Serializable {
 
     @Override
     public InputStream getErrorStream() {
-        return null;
+        return new RemoteInputStream(super.getErrorStream());
     }
 
     private static final long serialVersionUID = 1L;

@@ -22,7 +22,7 @@ class ProcessAdapter extends ProcessWithPty implements Serializable, IProcess {
 
     @Override
     public InputStream getErrorStream() {
-        return null;
+        return delegate.getErrorStream();
     }
 
     @Override

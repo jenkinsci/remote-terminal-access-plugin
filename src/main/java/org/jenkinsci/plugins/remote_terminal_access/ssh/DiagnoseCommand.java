@@ -94,8 +94,17 @@ public class DiagnoseCommand extends AsynchronousCommand {
             if (w!=null && h!=null)
                 proc.setWindowSize(Integer.parseInt(w),Integer.parseInt(h));
 
-            new FlushStreamCopyThread(getCmdLine()+" stdout pump",proc.getInputStream(),getOutputStream(),true).start();
-            new FlushStreamCopyThread(getCmdLine()+" stdin pump", getInputStream(),proc.getOutputStream(),true).start();
+            FlushStreamCopyThread t1 = new FlushStreamCopyThread(getCmdLine() + " stdout pump", proc.getInputStream(), getOutputStream(), true);
+            FlushStreamCopyThread t2 = new FlushStreamCopyThread(getCmdLine() + " stdin pump", getInputStream(), proc.getOutputStream(), true);
+            t1.start();
+            t2.start();
+
+            // stderr doesn't exist if there's pty
+            FlushStreamCopyThread t3=null;
+            if (term==null) {
+                t3 = new FlushStreamCopyThread(getCmdLine() + " stderr pump", proc.getErrorStream(), getErrorStream(), false); // we might need stderr to send our own error
+                t3.start();
+            }
 
             try {
                 int exit = proc.waitFor();
@@ -111,6 +120,9 @@ public class DiagnoseCommand extends AsynchronousCommand {
                 } catch (IOException e) {
                     LOGGER.log(Level.WARNING, "Failed to send signal to " + proc, e);
                 }
+                t1.join();
+                if (t3!=null)   t3.join();
+//                t2.join(); - client normally doesn't close stdin, so we don't wait for that
             }
         } catch (Exception e) {// this catch block becomes redundant with sshd-module 1.5
             PrintStream out = getErrorPrintStream();

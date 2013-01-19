@@ -18,7 +18,7 @@ public class ProcessWithFakePty extends ProcessWithPty {
 
     @Override
     public InputStream getErrorStream() {
-        return null;
+        return delegate.getErrorStream();
     }
 
     @Override

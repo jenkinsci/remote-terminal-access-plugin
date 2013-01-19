@@ -12,9 +12,7 @@ import org.kohsuke.ajaxterm.PtyProcessBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.util.Arrays.*;
 
@@ -32,7 +30,7 @@ public class ProcessWithPtyLauncher implements Serializable {
     }
 
     public ProcessWithPtyLauncher commands(List<String> commands) {
-        this.commands = commands;
+        this.commands = new ArrayList<String>(commands);
         return this;
     }
 
@@ -40,7 +38,7 @@ public class ProcessWithPtyLauncher implements Serializable {
      * Overrides on top of what the build gets.
      */
     public ProcessWithPtyLauncher envs(Map<String,String> map) {
-        this.envs = map;
+        this.envs = new HashMap<String, String>(map);
         return this;
     }
 
@@ -62,6 +60,7 @@ public class ProcessWithPtyLauncher implements Serializable {
                 public IProcess invoke(File dir, VirtualChannel channel) throws IOException, InterruptedException {
                     PtyProcessBuilder pb = new PtyProcessBuilder();
                     pb.commands(cmds);
+                    pb.envs(envs);
                     pb.envs(env);
                     pb.pwd(dir);
                     return new RemotableProcess(pb.forkWithHelper());
@@ -74,7 +73,9 @@ public class ProcessWithPtyLauncher implements Serializable {
                 public IProcess invoke(File dir, VirtualChannel channel) throws IOException, InterruptedException {
                     ProcessBuilder pb = new ProcessBuilder();
                     pb.command(cmds);
+                    pb.environment().putAll(envs);
                     pb.environment().putAll(env);
+                    pb.environment().remove("TERM");    // no terminal
                     pb.directory(dir);
                     return new RemotableProcess(new ProcessWithFakePty(pb.start()));
                 }

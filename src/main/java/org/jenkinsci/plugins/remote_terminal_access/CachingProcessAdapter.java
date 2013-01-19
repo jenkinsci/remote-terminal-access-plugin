@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @author Kohsuke Kawaguchi
  */
 class CachingProcessAdapter extends ProcessAdapter implements Serializable {
-    private InputStream in;
+    private InputStream in,err;
     private OutputStream out;
     private Integer exitCode;
 
@@ -30,6 +30,13 @@ class CachingProcessAdapter extends ProcessAdapter implements Serializable {
         if (in==null)
             in = super.getInputStream();
         return in;
+    }
+
+    @Override
+    public InputStream getErrorStream() {
+        if (err==null)
+            err = super.getErrorStream();
+        return err;
     }
 
     @Override

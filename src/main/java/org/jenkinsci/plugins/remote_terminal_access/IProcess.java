@@ -14,6 +14,7 @@ import java.io.OutputStream;
 public interface IProcess {
     OutputStream getOutputStream();
     InputStream getInputStream();
+    InputStream getErrorStream();
     int waitFor() throws InterruptedException;
     int exitValue();
     void destroy();
