@@ -16,6 +16,7 @@ import org.kohsuke.ajaxterm.ProcessWithPty;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,8 +76,8 @@ public class DiagnoseCommand extends AsynchronousCommand {
             String w = env.getEnv().get(Environment.ENV_COLUMNS);
             String h = env.getEnv().get(Environment.ENV_LINES);
             String term = env.getEnv().get(Environment.ENV_TERM);
-            if (w == null || h == null || term == null)
-                return die("No tty. Please run ssh with the -t option");
+//            if (w == null || h == null || term == null)
+//                return die("No tty. Please run ssh with the -t option");
 
             // probably pty was requested. this is a somewhat weaker way of testing this
             // TODO: patch mina to remember handlePty call
@@ -89,7 +90,8 @@ public class DiagnoseCommand extends AsynchronousCommand {
             pb.envs(env.getEnv());
 
             proc = pb.launch(build, new StreamTaskListener(getOutputStream()), term);
-            proc.setWindowSize(Integer.parseInt(w),Integer.parseInt(h));
+            if (w!=null && h!=null)
+                proc.setWindowSize(Integer.parseInt(w),Integer.parseInt(h));
 
             new FlushStreamCopyThread(getCmdLine()+" stdout pump",proc.getInputStream(),getOutputStream(),true).start();
             new FlushStreamCopyThread(getCmdLine()+" stdin pump", getInputStream(),proc.getOutputStream(),true).start();
