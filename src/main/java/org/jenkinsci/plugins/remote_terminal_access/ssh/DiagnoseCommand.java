@@ -4,6 +4,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
+import org.apache.sshd.common.PtyMode;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.Signal;
 import org.apache.sshd.server.SignalListener;
@@ -13,10 +14,10 @@ import org.jenkinsci.plugins.remote_terminal_access.ProcessWithPtyLauncher;
 import org.jenkinsci.plugins.remote_terminal_access.TerminalSessionAction;
 import org.kohsuke.ajaxterm.ProcessWithPty;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,17 +113,52 @@ public class DiagnoseCommand extends AsynchronousCommand {
                 }
             }
         } catch (Exception e) {// this catch block becomes redundant with sshd-module 1.5
-            PrintStream out = new PrintStream(getErrorStream());
+            PrintStream out = getErrorPrintStream();
             e.printStackTrace(out);
             out.flush();
             return 1;
         }
     }
 
+    /**
+     * WHen the terminal is allocated, I discovered that the linux SSH client (at least)
+     * sends the terminal mode ONLCR to 1, and expects us to send back CR+LF instead of just NL.
+     *
+     * If I understand pty correctly, I should be able to send a command to set this off,
+     * but I can't find such a command in terminfo, so I'm just working around by sending CR+LF.
+     *
+     * This unfortunately requires reflection as PrintStream doesn't make it modifiable.
+     */
+    private PrintStream getErrorPrintStream() {
+        PrintStream ps = new PrintStream(getErrorStream());
+        try {
+            Field $textOut = ps.getClass().getDeclaredField("textOut");
+            $textOut.setAccessible(true);
+            BufferedWriter bw = (BufferedWriter)$textOut.get(ps);
+            Field $lineSeparator = BufferedWriter.class.getDeclaredField("lineSeparator");
+            $lineSeparator.setAccessible(true);
+
+            String lineSeparator = null;
+            Integer onlcr = getEnvironment().getPtyModes().get(PtyMode.ONLCR);
+            if (onlcr!=null && onlcr==1)
+                lineSeparator = "\r\n";
+            // other output mode??
+            if (lineSeparator!=null)
+                $lineSeparator.set(bw,lineSeparator);
+
+            return ps;
+        } catch (NoSuchFieldException e) {
+            // if this ugly reflection fails, proceed anyway
+            return ps;
+        } catch (IllegalAccessException e) {
+            return ps;
+        }
+    }
+
     private int die(String msg) throws IOException {
-        OutputStream err = getErrorStream();
-        err.write(msg.getBytes());
-        err.write(0x0A);
+        PrintStream s = getErrorPrintStream();
+        s.println(msg);
+        s.flush();
         return 1;
     }
 
