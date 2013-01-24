@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.remote_terminal_access;
 
+import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.FilePath.FileCallable;
@@ -52,7 +53,9 @@ public class ProcessWithPtyLauncher implements Serializable {
             env.put("TERM", terminal);
         FilePath ws = build.getWorkspace();
         if (ws==null)
-            throw new IOException("No workspace accessible: "+build.getFullDisplayName());
+            throw new AbortException("No workspace accessible: "+build.getFullDisplayName());
+        if (!ws.isDirectory())
+            throw new AbortException("Workspace doesn't exist: "+ws);
         IProcess proc;
         final String[] cmds = commands.toArray(new String[commands.size()]); // list might not be serializable
         if (terminal!=null) {
