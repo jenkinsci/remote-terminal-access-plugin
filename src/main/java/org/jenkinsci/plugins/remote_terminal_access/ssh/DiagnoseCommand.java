@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  */
 public class DiagnoseCommand extends AsynchronousCommand {
     private ProcessWithPty proc;
+    private Thread thread;
 
     public DiagnoseCommand(CommandLine cmdLine) {
         super(cmdLine);
@@ -52,8 +53,13 @@ public class DiagnoseCommand extends AsynchronousCommand {
         super.start(env);
     }
 
+    public boolean isAlive() {
+        return thread.isAlive();
+    }
+
     @Override
     protected int run() {
+        thread = Thread.currentThread();
         try {
             List<String> args = getCmdLine().subList(1, getCmdLine().size());
             if (args.size()<1)
@@ -73,56 +79,62 @@ public class DiagnoseCommand extends AsynchronousCommand {
 
             build.checkPermission(TerminalSessionAction.ACCESS);
 
-            Environment env = getEnvironment();
-            String w = env.getEnv().get(Environment.ENV_COLUMNS);
-            String h = env.getEnv().get(Environment.ENV_LINES);
-            String term = env.getEnv().get(Environment.ENV_TERM);
-//            if (w == null || h == null || term == null)
-//                return die("No tty. Please run ssh with the -t option");
-
-            // probably pty was requested. this is a somewhat weaker way of testing this
-            // TODO: patch mina to remember handlePty call
-
-            ProcessWithPtyLauncher pb = new ProcessWithPtyLauncher();
-            if (args.isEmpty())
-                pb.shell();
-            else
-                pb.commands(args);
-            pb.envs(env.getEnv());
-
-            proc = pb.launch(build, new StreamTaskListener(getOutputStream()), term);
-            if (w!=null && h!=null)
-                proc.setWindowSize(Integer.parseInt(w),Integer.parseInt(h));
-
-            FlushStreamCopyThread t1 = new FlushStreamCopyThread(getCmdLine() + " stdout pump", proc.getInputStream(), getOutputStream(), true);
-            FlushStreamCopyThread t2 = new FlushStreamCopyThread(getCmdLine() + " stdin pump", getInputStream(), proc.getOutputStream(), true);
-            t1.start();
-            t2.start();
-
-            // stderr doesn't exist if there's pty
-            FlushStreamCopyThread t3=null;
-            if (term==null) {
-                t3 = new FlushStreamCopyThread(getCmdLine() + " stderr pump", proc.getErrorStream(), getErrorStream(), false); // we might need stderr to send our own error
-                t3.start();
-            }
-
+            final TerminalSessionAction tsa = TerminalSessionAction.getFor(build);
+            if (tsa!=null)  tsa.associate(this);
             try {
-                int exit = proc.waitFor();
-                proc = null;
-                return exit;
-            } finally {
-                try {// on abnormal termination, kill the process
-                    if (proc!=null) {
-                        proc.kill(9);
-                        proc.destroy();
-                    }
-                    proc = null;
-                } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, "Failed to send signal to " + proc, e);
+                Environment env = getEnvironment();
+                String w = env.getEnv().get(Environment.ENV_COLUMNS);
+                String h = env.getEnv().get(Environment.ENV_LINES);
+                String term = env.getEnv().get(Environment.ENV_TERM);
+    //            if (w == null || h == null || term == null)
+    //                return die("No tty. Please run ssh with the -t option");
+
+                // probably pty was requested. this is a somewhat weaker way of testing this
+                // TODO: patch mina to remember handlePty call
+
+                ProcessWithPtyLauncher pb = new ProcessWithPtyLauncher();
+                if (args.isEmpty())
+                    pb.shell();
+                else
+                    pb.commands(args);
+                pb.envs(env.getEnv());
+
+                proc = pb.launch(build, new StreamTaskListener(getOutputStream()), term);
+                if (w!=null && h!=null)
+                    proc.setWindowSize(Integer.parseInt(w),Integer.parseInt(h));
+
+                FlushStreamCopyThread t1 = new FlushStreamCopyThread(getCmdLine() + " stdout pump", proc.getInputStream(), getOutputStream(), true);
+                FlushStreamCopyThread t2 = new FlushStreamCopyThread(getCmdLine() + " stdin pump", getInputStream(), proc.getOutputStream(), true);
+                t1.start();
+                t2.start();
+
+                // stderr doesn't exist if there's pty
+                FlushStreamCopyThread t3=null;
+                if (term==null) {
+                    t3 = new FlushStreamCopyThread(getCmdLine() + " stderr pump", proc.getErrorStream(), getErrorStream(), false); // we might need stderr to send our own error
+                    t3.start();
                 }
-                t1.join();
-                if (t3!=null)   t3.join();
-//                t2.join(); - client normally doesn't close stdin, so we don't wait for that
+
+                try {
+                    int exit = proc.waitFor();
+                    proc = null;
+                    return exit;
+                } finally {
+                    try {// on abnormal termination, kill the process
+                        if (proc!=null) {
+                            proc.kill(9);
+                            proc.destroy();
+                        }
+                        proc = null;
+                    } catch (IOException e) {
+                        LOGGER.log(Level.WARNING, "Failed to send signal to " + proc, e);
+                    }
+                    t1.join();
+                    if (t3!=null)   t3.join();
+    //                t2.join(); - client normally doesn't close stdin, so we don't wait for that
+                }
+            } finally {
+                if (tsa!=null)  tsa.unassociate(this);
             }
         } catch (Exception e) {// this catch block becomes redundant with sshd-module 1.5
             PrintStream out = getErrorPrintStream();

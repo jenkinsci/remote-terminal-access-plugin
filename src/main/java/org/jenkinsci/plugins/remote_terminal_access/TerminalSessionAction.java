@@ -6,13 +6,14 @@ import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Environment;
-import hudson.model.Job;
+import hudson.model.EnvironmentList;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.remote_terminal_access.ssh.DiagnoseCommand;
 import org.kohsuke.ajaxterm.ProcessWithPty;
 import org.kohsuke.ajaxterm.Session;
 import org.kohsuke.stapler.HttpResponse;
@@ -22,6 +23,9 @@ import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * {@link Action} that attach to {@link AbstractBuild} to show the "interactive terminal" option in the UI.
@@ -36,6 +40,10 @@ public class TerminalSessionAction extends Environment implements Action {
     private final BuildListener listener;
 
     private volatile Session session;
+    /**
+     * Keeps track of SSH commands running on this workspace.
+     */
+    private final List<DiagnoseCommand> sshCommands = Collections.synchronizedList(new ArrayList<DiagnoseCommand>());
 
     public TerminalSessionAction(AbstractBuild build, Launcher launcher, BuildListener listener) {
         this.build = build;
@@ -47,13 +55,22 @@ public class TerminalSessionAction extends Environment implements Action {
     public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
         if (hasSession() && build.getResult()!=Result.ABORTED) {// if the build is already aborted, don't hang any further
             String url = HyperlinkNote.encodeTo("./" + getUrlName(), Messages.TerminalSessionAction_LinkedText());
-            listener.getLogger().println(Messages.TerminalSessionAction_WaitingForTerminal("Waiting for "+ url +" to exit"));
+            listener.getLogger().println(Messages.TerminalSessionAction_WaitingForTerminal(url));
             do {
                 Session s = session; // capture for consistency
                 if (s!=null)
                     s.join();
             } while(hasSession());
         }
+
+        synchronized (sshCommands) {
+            if (!sshCommands.isEmpty()) {
+                listener.getLogger().println(Messages.TerminalSessionAction_WaitingForSsh(sshCommands.size()));
+                while (!sshCommands.isEmpty())
+                    sshCommands.wait();
+            }
+        }
+
         return true;
     }
 
@@ -113,6 +130,27 @@ public class TerminalSessionAction extends Environment implements Action {
             s.handleUpdate(req, rsp);
         else
             rsp.setStatus(404);
+    }
+
+    public void associate(DiagnoseCommand cmd) {
+        synchronized (sshCommands) {
+            sshCommands.add(cmd);
+            sshCommands.notifyAll();
+        }
+    }
+
+    public void unassociate(DiagnoseCommand cmd) {
+        synchronized (sshCommands) {
+            sshCommands.remove(cmd);
+            sshCommands.notifyAll();
+        }
+    }
+
+    public static TerminalSessionAction getFor(AbstractBuild<?,?> build) {
+        EnvironmentList e = build.getEnvironments();
+        if (e!=null)
+            return e.get(TerminalSessionAction.class);
+        return null;
     }
 
     public static final PermissionGroup PERMISSIONS = new PermissionGroup(Run.class, Messages._TerminalSessionAction_Permissions_Title());
