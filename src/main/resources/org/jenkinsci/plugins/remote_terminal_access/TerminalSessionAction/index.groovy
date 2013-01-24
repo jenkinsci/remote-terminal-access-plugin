@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.remote_terminal_access.TerminalSessionAction
 
+import com.sun.jmx.snmp.IPAcl.Host
 import hudson.model.AbstractBuild
 import hudson.model.TopLevelItem
 import org.jenkinsci.main.modules.sshd.SSHD;
@@ -34,11 +35,31 @@ l.layout {
         }
 
         def sshd = SSHD.get()
-        if (sshd.actualPort>0) {
-            h1 _("SSH Access")
+        def port = sshd.actualPort
+        if (port>0) {
             AbstractBuild b = request.findAncestorObject(AbstractBuild.class)
-            raw _("sshBlurb",new URL(app.rootUrl).host, sshd.actualPort.toString(),
-                    b.rootBuild.parent.fullName, b.number.toString())
+            def jobName = b.rootBuild.parent.fullName
+            def host = new URL(app.rootUrl).host
+
+            h1 _("SSH Access")
+            raw "<style>.cmd { color:white; background-color:black; font-weight:bold; padding:1em; }</style>"
+
+            p { raw(_("sshBlurb")) }
+            raw """
+<pre class=cmd>Host=*.$host
+Port=$port
+ProxyCommand=ssh -q -p $port $host diagnose-tunnel -suffix .$host %h
+</pre>
+"""
+            p _("sshExample")
+            raw """
+<pre class=cmd>
+\$ ssh $jobName.$host
+\$ ssh '${b.number}#$jobName.$host'
+\$ ssh 'lastFailedBuild#$jobName.$host'
+</pre>
+"""
+            p _("whenInteractive")
         }
     }
 }
