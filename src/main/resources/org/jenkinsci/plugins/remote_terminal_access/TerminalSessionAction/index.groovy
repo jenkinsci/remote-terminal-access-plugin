@@ -1,4 +1,8 @@
-package org.jenkinsci.plugins.remote_terminal_access.TerminalSessionAction;
+package org.jenkinsci.plugins.remote_terminal_access.TerminalSessionAction
+
+import hudson.model.AbstractBuild
+import hudson.model.TopLevelItem
+import org.jenkinsci.main.modules.sshd.SSHD;
 
 def f=namespace(lib.FormTagLib)
 def l=namespace(lib.LayoutTagLib)
@@ -25,9 +29,16 @@ l.layout {
         } else {
             p(style:"margin:1em;", _("blurb"))
             form(method:"POST",action:"startSession") {
-                f.submit(value:_("Launch a terminal"))
+                f.submit(value:_("Launch a terminal in this browser"))
             }
         }
 
+        def sshd = SSHD.get()
+        if (sshd.actualPort>0) {
+            h1 _("SSH Access")
+            AbstractBuild b = request.findAncestorObject(AbstractBuild.class)
+            raw _("sshBlurb",new URL(app.rootUrl).host, sshd.actualPort.toString(),
+                    b.rootBuild.parent.fullName, b.number.toString())
+        }
     }
 }
