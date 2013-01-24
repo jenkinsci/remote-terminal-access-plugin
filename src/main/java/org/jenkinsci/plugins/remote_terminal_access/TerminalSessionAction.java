@@ -65,7 +65,8 @@ public class TerminalSessionAction extends Environment implements Action {
 
         synchronized (sshCommands) {
             if (!sshCommands.isEmpty()) {
-                listener.getLogger().println(Messages.TerminalSessionAction_WaitingForSsh(sshCommands.size()));
+                String url = HyperlinkNote.encodeTo("./" + getUrlName()+"/kill", Messages.TerminalSessionAction_KillNow());
+                listener.getLogger().println(Messages.TerminalSessionAction_WaitingForSsh(sshCommands.size(),url));
                 while (!sshCommands.isEmpty())
                     sshCommands.wait();
             }
@@ -144,6 +145,19 @@ public class TerminalSessionAction extends Environment implements Action {
             sshCommands.remove(cmd);
             sshCommands.notifyAll();
         }
+    }
+
+    /**
+     * Interrupts the all pending SSH commands and terminate them all.
+     */
+    public HttpResponse doKill() {
+        build.checkPermission(ACCESS);
+        synchronized (sshCommands) {
+            for (DiagnoseCommand cmd : sshCommands) {
+                cmd.destroy();
+            }
+        }
+        return HttpResponses.forwardToPreviousPage();
     }
 
     public static TerminalSessionAction getFor(AbstractBuild<?,?> build) {
