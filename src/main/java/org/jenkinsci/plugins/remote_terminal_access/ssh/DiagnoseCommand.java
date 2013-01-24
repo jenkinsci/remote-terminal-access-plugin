@@ -1,7 +1,9 @@
 package org.jenkinsci.plugins.remote_terminal_access.ssh;
 
+import hudson.AbortException;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.PermalinkProjectAction.Permalink;
 import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.sshd.common.PtyMode;
@@ -63,19 +65,12 @@ public class DiagnoseCommand extends AsynchronousCommand {
         try {
             List<String> args = getCmdLine().subList(1, getCmdLine().size());
             if (args.size()<1)
-                return die("No job name specified");
+                throw new AbortException("No job name specified");
 
             String jobname = args.get(0);
             args = args.subList(1,args.size());
 
-            AbstractProject<?,?> p = Jenkins.getInstance().getItemByFullName(jobname,AbstractProject.class);
-            if (p==null)
-                return die("No such job found: "+jobname);
-
-            // TODO: support the build number or permalink to be specified as an option
-            AbstractBuild<?,?> build = p.getLastBuild();
-            if (build==null)
-                return die("No build found for job: "+jobname);
+            AbstractBuild<?, ?> build = resolveBuild(jobname);
 
             build.checkPermission(TerminalSessionAction.ACCESS);
 
@@ -136,12 +131,48 @@ public class DiagnoseCommand extends AsynchronousCommand {
             } finally {
                 if (tsa!=null)  tsa.unassociate(this);
             }
+        } catch (AbortException e) {
+            return die(e.getMessage());
         } catch (Exception e) {// this catch block becomes redundant with sshd-module 1.5
             PrintStream out = getErrorPrintStream();
             e.printStackTrace(out);
             out.flush();
             return 1;
         }
+    }
+
+    private AbstractBuild<?, ?> resolveBuild(String jobname) throws AbortException {
+        String buildName = null;
+        int idx = jobname.indexOf('#');
+        if (idx>0) {
+            buildName = jobname.substring(0,idx);
+            jobname = jobname.substring(idx+1);
+        }
+
+        AbstractProject<?,?> p = Jenkins.getInstance().getItemByFullName(jobname,AbstractProject.class);
+        if (p==null)
+            throw new AbortException("No such job found: "+jobname);
+
+        AbstractBuild<?,?> build = null;
+
+        if (buildName==null) {
+            build = p.getLastBuild();
+            buildName = "lastBuild";
+        } else {
+            try {// number?
+                int n = Integer.parseInt(buildName);
+                build = p.getBuildByNumber(n);
+            } catch (NumberFormatException _) {
+                // permalink?
+                Permalink link = p.getPermalinks().get(buildName);
+                if (link!=null)
+                    build = (AbstractBuild<?,?>)link.resolve(p);
+            }
+        }
+
+        if (build==null)
+            throw new AbortException("No such build found: "+jobname+" "+buildName);
+        return build;
     }
 
     /**
@@ -179,7 +210,7 @@ public class DiagnoseCommand extends AsynchronousCommand {
         }
     }
 
-    private int die(String msg) throws IOException {
+    private int die(String msg) {
         PrintStream s = getErrorPrintStream();
         s.println(msg);
         s.flush();
