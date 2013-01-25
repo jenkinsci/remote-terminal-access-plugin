@@ -1,8 +1,6 @@
 package org.jenkinsci.plugins.remote_terminal_access.TerminalSessionAction
 
-import com.sun.jmx.snmp.IPAcl.Host
 import hudson.model.AbstractBuild
-import hudson.model.TopLevelItem
 import org.jenkinsci.main.modules.sshd.SSHD;
 
 def f=namespace(lib.FormTagLib)
