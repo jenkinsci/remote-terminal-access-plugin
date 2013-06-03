@@ -24,7 +24,10 @@ import java.util.Map;
 import static hudson.Util.*;
 
 /**
- * {@link Command} implementation that exits by complaining that there's no such command.
+ * {@link Command} implementation that tunnels another SSH session in its stdin/stdout.
+ *
+ * The tunneled SSH session runs the "diagnose JOBANEM" command implicitly, thereby
+ * making the nested SSH session behave like a real SSH connection to a real server.
  *
  * @author Kohsuke Kawaguchi
  */

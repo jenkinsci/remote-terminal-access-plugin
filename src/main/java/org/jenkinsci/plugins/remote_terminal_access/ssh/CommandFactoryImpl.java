@@ -5,6 +5,8 @@ import org.apache.sshd.server.Command;
 import org.jenkinsci.main.modules.sshd.SshCommandFactory;
 
 /**
+ * Adds an SSH related command.
+ *
  * @author Kohsuke Kawaguchi
  */
 @Extension
