@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.remote_terminal_access.lease;
 
+import hudson.AbortException;
 import hudson.Util;
 import hudson.model.Computer;
 import hudson.model.Executor;
@@ -44,6 +45,11 @@ public class LeaseContext {
     }
 
     public void add(String alias, Label label, String displayName, long duration) {
+        if (displayName==null)
+            displayName = id+":"+alias;
+        else
+            displayName += " "+id+":"+alias;
+
         LeasedTask t = new LeasedTask(label,displayName,duration,new Runnable() {
             public void run() {
                 try {
@@ -76,8 +82,11 @@ public class LeaseContext {
     /**
      * Gets the {@link Executor} that maps to the alias.
      */
-    public Executor get(String alias) throws ExecutionException, InterruptedException {
+    public Executor get(String alias) throws ExecutionException, InterruptedException, AbortException {
         QueueTaskFuture<?> t = tasks.get(alias);
+        if (t==null)
+            throw new AbortException("No such alias: "+alias);
+
         Executable work = t.waitForStart();
 
         for (Computer c : Jenkins.getInstance().getComputers()) {
