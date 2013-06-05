@@ -41,6 +41,7 @@ public class LeaseFile implements Serializable {
                     File lease = new File(d,".jenkins.lease");
                     if (lease.exists()) {
                         lease.delete();
+                        new File(lease.getParentFile(),".jenkins.lease.ssh_config").delete();
                         break;
                     }
                     d = d.getParentFile();
