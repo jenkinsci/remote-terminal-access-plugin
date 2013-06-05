@@ -39,10 +39,10 @@ public class LeaseFile implements Serializable {
             public Void call() throws IOException {
                 File d = new File(".").getAbsoluteFile();
                 while (d!=null) {
-                    File lease = new File(d,".jenkins.lease");
+                    File lease = new File(d,LEASE_FILE);
                     if (lease.exists()) {
                         lease.delete();
-                        new File(lease.getParentFile(),".jenkins.lease.ssh_config").delete();
+                        new File(lease.getParentFile(),SSHCONFIG_FILE).delete();
                         break;
                     }
                     d = d.getParentFile();
@@ -60,7 +60,7 @@ public class LeaseFile implements Serializable {
             public Properties call() throws IOException {
                 File d = new File(".").getAbsoluteFile();
                 while (d!=null) {
-                    File lease = new File(d,".jenkins.lease");
+                    File lease = new File(d,LEASE_FILE);
                     if (lease.exists()) {
                         Properties props = new Properties();
                         FileInputStream in = new FileInputStream(lease);
@@ -96,7 +96,7 @@ public class LeaseFile implements Serializable {
 
         channel.call(new Callable<Void, IOException>() {
             public Void call() throws IOException {
-                File lease = new File(".jenkins.lease");
+                File lease = new File(LEASE_FILE);
                 Properties props = new Properties();
                 props.setProperty("session", session);
                 props.setProperty("lease", id);
@@ -108,7 +108,7 @@ public class LeaseFile implements Serializable {
                     out.close();
                 }
 
-                FileWriter w = new FileWriter(".jenkins.lease.ssh_config");
+                FileWriter w = new FileWriter(SSHCONFIG_FILE);
                 PrintWriter pw = new PrintWriter(w);
 
                 for (String alias : aliases) {
@@ -125,4 +125,7 @@ public class LeaseFile implements Serializable {
     }
 
     private static final long serialVersionUID = 1L;
+
+    public static final String LEASE_FILE = "Leasefile";
+    public static final String SSHCONFIG_FILE = "Leasefile.ssh";
 }
