@@ -11,6 +11,7 @@ import hudson.util.IOException2;
 import jenkins.model.Jenkins;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -110,5 +111,9 @@ public class LeaseContext {
             f.cancel(true);
         }
         LeaseContextMap.get().remove(this);
+    }
+
+    public Set<String> getAliases() {
+        return tasks.keySet();
     }
 }
