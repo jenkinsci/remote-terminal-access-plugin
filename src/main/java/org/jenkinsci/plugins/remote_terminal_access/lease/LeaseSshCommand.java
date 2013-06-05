@@ -41,6 +41,8 @@ public class LeaseSshCommand extends AbstractRemoteSshCommand {
         LeaseContext lease = LeaseContext.getById(leaseId);
         if (lease==null)
             throw new AbortException("Invalid lease ID: "+leaseId);
+        lease.checkOwner();
+
         Executor x = lease.get(alias);
         if (x==null)
             throw new AbortException("Invalid alias: "+alias);

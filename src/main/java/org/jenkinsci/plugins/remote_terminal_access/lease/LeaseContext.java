@@ -28,12 +28,21 @@ public class LeaseContext {
 
     public final String id = Util.getDigestOf(UUID.randomUUID().toString()).substring(0,8);
 
+    public final String owner;
+
     public LeaseContext() {
         LeaseContextMap.get().add(this);
+        owner = Jenkins.getAuthentication().getName();
     }
 
     public static LeaseContext getById(String id) {
         return LeaseContextMap.get().get(id);
+    }
+
+    public void checkOwner() throws AbortException {
+        String you = Jenkins.getAuthentication().getName();
+        if (!owner.equals(you))
+            throw new AbortException("This lease belongs to "+owner+" but you are "+you);
     }
 
     public void add(final String alias, Label label, String displayName, long duration) {

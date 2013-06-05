@@ -9,6 +9,7 @@ import hudson.model.Label;
 import hudson.model.Run;
 import hudson.remoting.Callable;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.remote_terminal_access.TerminalSessionAction;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
@@ -41,7 +42,10 @@ public class LeaseStartCommand extends CLICommand {
 
     @Override
     protected int run() throws Exception {
+        Jenkins.getInstance().checkPermission(TerminalSessionAction.ACCESS);
+
         LeaseContext context = attachContext();
+        context.checkOwner();
 
         for (String lease : leases) {
             Label l;

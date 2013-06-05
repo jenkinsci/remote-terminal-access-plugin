@@ -28,6 +28,7 @@ public class LeaseEndCommand extends CLICommand {
         LeaseFile lf = new LeaseFile(channel);
         LeaseContext c = lf.get();
         if (c!=null) {
+            c.checkOwner();
             if (aliases.isEmpty()) {
                 stderr.println("Finishing the lease "+c.id);
                 c.end();
