@@ -1,15 +1,17 @@
 package org.jenkinsci.plugins.remote_terminal_access.lease;
 
 import hudson.Extension;
+import hudson.Util;
 import hudson.cli.CLICommand;
 import hudson.model.Label;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Lease executors.
+ *
  * @author Kohsuke Kawaguchi
  */
 @Extension
@@ -76,6 +78,7 @@ public class LeaseCommand extends CLICommand {
             stderr.println("Waiting for all the executors to start running");
             context.waitForStart();
             new LeaseFile(channel).set(context);
+            stderr.println("Ready. Current aliases: " + Util.join(context.getAliases(), ","));
             return 0;
         } catch (InterruptedException e) {
             context.end();
