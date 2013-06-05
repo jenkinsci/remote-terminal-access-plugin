@@ -4,8 +4,13 @@ import hudson.AbortException;
 import hudson.Extension;
 import hudson.Util;
 import hudson.cli.CLICommand;
+import hudson.model.Job;
 import hudson.model.Label;
+import hudson.model.Run;
+import hudson.remoting.Callable;
+import jenkins.model.Jenkins;
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
 
 import java.io.IOException;
@@ -74,12 +79,66 @@ public class LeaseStartCommand extends CLICommand {
         }
     }
 
-    protected LeaseContext attachContext() throws InterruptedException, IOException {
+    protected LeaseContext attachContext() throws InterruptedException, IOException, CmdLineException {
         LeaseContext context = new LeaseFile(channel).get();
         if (context==null) {
-            return new LeaseContext();   // new lease
+            context = new LeaseContext();   // new lease
+
+            Run x = optCurrentlyBuilding();
+            if (x!=null) {
+                // if this is inside a build, record it
+                LeaseBuildAction lba = x.getAction(LeaseBuildAction.class);
+                if (lba==null)
+                    x.addAction(lba=new LeaseBuildAction());
+                lba.addLease(context);
+            }
+
+            return context;
         } else {
             throw new AbortException("A lease already exists");
+        }
+    }
+
+    /**
+     * If the command is currently running inside a build, return it. Otherwise null.
+     *
+     * TODO: switch to the same method in core 1.519
+     */
+    protected Run optCurrentlyBuilding() throws CmdLineException {
+        try {
+            CLICommand c = CLICommand.getCurrent();
+            if (c==null)    throw new IllegalStateException("Not executing a CLI command");
+            String[] envs = c.checkChannel().call(new GetCharacteristicEnvironmentVariables());
+
+            if (envs[0]==null || envs[1]==null)
+                return null;
+
+            Job j = Jenkins.getInstance().getItemByFullName(envs[0],Job.class);
+            if (j==null)    throw new CmdLineException("No such job: "+envs[0]);
+
+            try {
+                Run r = j.getBuildByNumber(Integer.parseInt(envs[1]));
+                if (r==null)    throw new CmdLineException("No such build #"+envs[1]+" in "+envs[0]);
+                return r;
+            } catch (NumberFormatException e) {
+                throw new CmdLineException("Invalid build number: "+envs[1]);
+            }
+        } catch (IOException e) {
+            throw new CmdLineException("Failed to identify the build being executed",e);
+        } catch (InterruptedException e) {
+            throw new CmdLineException("Failed to identify the build being executed",e);
+        }
+    }
+
+    /**
+     * Gets the environment variables that points to the build being executed.
+     */
+    private static final class GetCharacteristicEnvironmentVariables implements Callable<String[],IOException> {
+        public String[] call() throws IOException {
+            return new String[] {
+                System.getenv("JOB_NAME"),
+                System.getenv("BUILD_NUMBER")
+            };
         }
     }
 }
