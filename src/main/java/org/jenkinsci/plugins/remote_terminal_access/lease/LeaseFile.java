@@ -14,6 +14,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -89,7 +90,9 @@ public class LeaseFile implements Serializable {
         final String id = context.id;
         final String session = Jenkins.SESSION_HASH;        final Set<String> aliases = new HashSet<String>(context.getAliases());
         final int sshPort = SSHD.get().getActualPort();
-        final String sshHost = PageDecorator.all().get(PortAdvertiser.class).host;
+        String host = PageDecorator.all().get(PortAdvertiser.class).host;
+        if (host==null) host = new URL(Jenkins.getInstance().getRootUrl()).getHost();
+        final String sshHost = host;
 
         channel.call(new Callable<Void, IOException>() {
             public Void call() throws IOException {
