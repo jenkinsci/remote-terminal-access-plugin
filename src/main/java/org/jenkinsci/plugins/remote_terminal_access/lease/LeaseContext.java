@@ -7,8 +7,10 @@ import hudson.model.Executor;
 import hudson.model.Label;
 import hudson.model.Queue.Executable;
 import hudson.model.queue.QueueTaskFuture;
+import hudson.util.IOException2;
 import jenkins.model.Jenkins;
 
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -18,12 +20,6 @@ import java.util.concurrent.ExecutionException;
  * @author Kohsuke Kawaguchi
  */
 public class LeaseContext {
-    /*
-        How to maintain context
-            UUID -> LeaseContext?
-                WeakReference doesn't buy us anything because it's the executors that get blocked
-
-     */
     /**
      * Currently active leases.
      */
@@ -82,20 +78,24 @@ public class LeaseContext {
     /**
      * Gets the {@link Executor} that maps to the alias.
      */
-    public Executor get(String alias) throws ExecutionException, InterruptedException, AbortException {
-        QueueTaskFuture<?> t = tasks.get(alias);
-        if (t==null)
-            throw new AbortException("No such alias: "+alias);
+    public Executor get(String alias) throws InterruptedException, IOException {
+        try {
+            QueueTaskFuture<?> t = tasks.get(alias);
+            if (t==null)
+                throw new AbortException("No such alias: "+alias);
 
-        Executable work = t.waitForStart();
+            Executable work = t.waitForStart();
 
-        for (Computer c : Jenkins.getInstance().getComputers()) {
-            for (Executor e : c.getExecutors()) {
-                if (e.getCurrentExecutable()==work)
-                    return e;
+            for (Computer c : Jenkins.getInstance().getComputers()) {
+                for (Executor e : c.getExecutors()) {
+                    if (e.getCurrentExecutable()==work)
+                        return e;
+                }
             }
+            return null;
+        } catch (ExecutionException e) {
+            throw new IOException2("Failed to locate the alias: "+alias,e);
         }
-        return null;
     }
 
     /**

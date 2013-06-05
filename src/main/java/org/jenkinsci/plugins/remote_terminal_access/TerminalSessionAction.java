@@ -114,7 +114,7 @@ public class TerminalSessionAction extends Environment implements Action {
         if (session!=null)
             session.interrupt();
 
-        ProcessWithPty p = new ProcessWithPtyLauncher().shell().launch(build,listener,Session.getAjaxTerm());
+        ProcessWithPty p = new ProcessWithPtyLauncher().shell().configure(build,listener).launch(Session.getAjaxTerm());
         session = new Session(80,25, p);
 
         return HttpResponses.redirectToDot();

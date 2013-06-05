@@ -1,7 +1,6 @@
 package org.jenkinsci.plugins.remote_terminal_access;
 
 import hudson.AbortException;
-import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.FilePath.FileCallable;
 import hudson.model.AbstractBuild;
@@ -24,7 +23,12 @@ import static java.util.Arrays.*;
  */
 public class ProcessWithPtyLauncher implements Serializable {
     private List<String> commands;
-    private Map<String,String> envs = Collections.emptyMap();
+    private final Map<String,String> envs = new HashMap<String,String>();
+    /**
+     * Specifies the current directory to launch the process in
+     * (and it also determines the slave it will be run on.)
+     */
+    private FilePath ws;
 
     public ProcessWithPtyLauncher shell() {
         return commands(asList("/bin/bash", "-i"));
@@ -39,7 +43,26 @@ public class ProcessWithPtyLauncher implements Serializable {
      * Overrides on top of what the build gets.
      */
     public ProcessWithPtyLauncher envs(Map<String,String> map) {
-        this.envs = new HashMap<String, String>(map);
+        this.envs.putAll(map);
+        return this;
+    }
+
+    public ProcessWithPtyLauncher ws(FilePath ws) {
+        this.ws = ws;
+        return this;
+    }
+
+    /**
+     * Configures the launcher to launch the process in the workspace of an in-progress build with the same
+     * set of environment variables.
+     */
+    public ProcessWithPtyLauncher configure(AbstractBuild build, TaskListener listener) throws IOException, InterruptedException {
+        envs.putAll(build.getEnvironment(listener));
+        ws = build.getWorkspace();
+        if (ws ==null)
+            throw new AbortException("No workspace accessible: "+build.getFullDisplayName());
+        if (!ws.isDirectory())
+            throw new AbortException("Workspace doesn't exist: "+ ws);
         return this;
     }
 
@@ -47,24 +70,16 @@ public class ProcessWithPtyLauncher implements Serializable {
      * @param terminal
      *      if null, a process will be launched without a terminal.
      */
-    public ProcessWithPty launch(AbstractBuild build, TaskListener listener, String terminal) throws IOException, InterruptedException {
-        final EnvVars env = build.getEnvironment(listener);
-        if (terminal!=null)
-            env.put("TERM", terminal);
-        FilePath ws = build.getWorkspace();
-        if (ws==null)
-            throw new AbortException("No workspace accessible: "+build.getFullDisplayName());
-        if (!ws.isDirectory())
-            throw new AbortException("Workspace doesn't exist: "+ws);
+    public ProcessWithPty launch(String terminal) throws IOException, InterruptedException {
         IProcess proc;
         final String[] cmds = commands.toArray(new String[commands.size()]); // list might not be serializable
         if (terminal!=null) {
+            envs.put("TERM", terminal);
             proc = ws.act(new FileCallable<IProcess>() {
                 public IProcess invoke(File dir, VirtualChannel channel) throws IOException, InterruptedException {
                     PtyProcessBuilder pb = new PtyProcessBuilder();
                     pb.commands(cmds);
                     pb.envs(envs);
-                    pb.envs(env);
                     pb.pwd(dir);
                     return new RemotableProcess(pb.forkWithHelper());
                 }
@@ -77,7 +92,6 @@ public class ProcessWithPtyLauncher implements Serializable {
                     ProcessBuilder pb = new ProcessBuilder();
                     pb.command(cmds);
                     pb.environment().putAll(envs);
-                    pb.environment().putAll(env);
                     pb.environment().remove("TERM");    // no terminal
                     pb.directory(dir);
                     return new RemotableProcess(new ProcessWithFakePty(pb.start()));
