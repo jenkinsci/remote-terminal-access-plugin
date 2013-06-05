@@ -5,7 +5,6 @@ import org.apache.sshd.server.Command;
 import org.apache.sshd.server.CommandFactory;
 import org.jenkinsci.main.modules.sshd.SshCommandFactory.CommandLine;
 import org.jenkinsci.plugins.remote_terminal_access.ssh.AbstractTunnelCommand;
-import org.jenkinsci.plugins.remote_terminal_access.ssh.DiagnoseCommand;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineParser;
 

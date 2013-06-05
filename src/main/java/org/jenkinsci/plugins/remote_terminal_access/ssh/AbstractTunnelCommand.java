@@ -9,14 +9,13 @@ import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.future.CloseFuture;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.CommandFactory;
+import org.apache.sshd.server.FileSystemView;
 import org.apache.sshd.server.ServerFactoryManager;
 import org.apache.sshd.server.session.ServerSession;
 import org.jenkinsci.main.modules.sshd.AsynchronousCommand;
 import org.jenkinsci.main.modules.sshd.SshCommandFactory.CommandLine;
-import org.kohsuke.args4j.CmdLineParser;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,6 +49,7 @@ public abstract class AbstractTunnelCommand extends AsynchronousCommand {
         Map<String,Object> overrides = new HashMap<String, Object>();
         overrides.put("getCommandFactory",getCommandFactory());
         overrides.put("getShellFactory",getShellFactory());
+        overrides.put("getFileSystemFactory",getFileSystemFactory());
 
         ServerFactoryManager sfm = InterceptingProxy.create(ServerFactoryManager.class,
                 getSession().getServerFactoryManager(),
@@ -60,6 +60,14 @@ public abstract class AbstractTunnelCommand extends AsynchronousCommand {
 
     protected abstract CommandFactory getCommandFactory();
     protected abstract Factory<Command> getShellFactory();
+
+    /**
+     * Override this method to add sftp support
+     */
+    protected FileSystemView getFileSystemFactory() {
+        // default is to delegate, but you can add more
+        return null;
+    }
 
     /**
      * Pumps data between the stdin/out and the tunneled SSH session.
