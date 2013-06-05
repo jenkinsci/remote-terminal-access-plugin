@@ -40,7 +40,7 @@ public class LeaseBuildAction extends InvisibleAction {
      * When the build ends, release all the leases.
      */
     @Extension
-    public class RunListenerImpl extends RunListener {
+    public static class RunListenerImpl extends RunListener {
         @Override
         public void onCompleted(Run run, @Nonnull TaskListener listener) {
             LeaseBuildAction lba = run.getAction(LeaseBuildAction.class);
