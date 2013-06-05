@@ -1,11 +1,14 @@
 package org.jenkinsci.plugins.remote_terminal_access.lease;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.Util;
 import hudson.cli.CLICommand;
 import hudson.model.Label;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,9 +29,6 @@ public class LeaseStartCommand extends CLICommand {
     @Argument
     public List<String> leases = new ArrayList<String>();
 
-    @Option(name="-add",usage="Adds to existing lease, instead of creating a new one")
-    public boolean add;
-
     @Override
     public String getShortDescription() {
         return "Lease a computer from Jenkins slave";
@@ -36,19 +36,7 @@ public class LeaseStartCommand extends CLICommand {
 
     @Override
     protected int run() throws Exception {
-        LeaseContext context = new LeaseFile(channel).get();
-        if (context==null) {
-            if (add) {
-                stderr.println("There's no existing lease");
-                return 1;
-            }
-            context = new LeaseContext();   // new lease
-        } else {
-            if (!add) {
-                stderr.println("A lease already exists");
-                return 1;
-            }
-        }
+        LeaseContext context = attachContext();
 
         for (String lease : leases) {
             Label l;
@@ -83,6 +71,15 @@ public class LeaseStartCommand extends CLICommand {
         } catch (InterruptedException e) {
             context.end();
             throw e;
+        }
+    }
+
+    protected LeaseContext attachContext() throws InterruptedException, IOException {
+        LeaseContext context = new LeaseFile(channel).get();
+        if (context==null) {
+            return new LeaseContext();   // new lease
+        } else {
+            throw new AbortException("A lease already exists");
         }
     }
 }
