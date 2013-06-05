@@ -15,7 +15,7 @@ import java.util.List;
  * @author Kohsuke Kawaguchi
  */
 @Extension
-public class LeaseCommand extends CLICommand {
+public class LeaseStartCommand extends CLICommand {
 
     @Option(name="-n",usage="Human readable name that describe this command. Used in Jenkins' UI.")
     public String name;

@@ -97,8 +97,8 @@ public class LeasedTask implements Queue.TransientTask {
     }
 
     public String getUrl() {
-        // TODO
-        throw new UnsupportedOperationException();
+        // TODO: what to show?
+        return null;
     }
 
     public String getDisplayName() {

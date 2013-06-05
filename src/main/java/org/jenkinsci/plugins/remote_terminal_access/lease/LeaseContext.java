@@ -28,11 +28,6 @@ public class LeaseContext {
 
     public final String id = Util.getDigestOf(UUID.randomUUID().toString()).substring(0,8);
 
-    /**
-     * Set to true if this lease context has ended.
-     */
-    private boolean done;
-
     public LeaseContext() {
         LeaseContextMap.get().add(this);
     }
@@ -41,7 +36,7 @@ public class LeaseContext {
         return LeaseContextMap.get().get(id);
     }
 
-    public void add(String alias, Label label, String displayName, long duration) {
+    public void add(final String alias, Label label, String displayName, long duration) {
         if (displayName==null)
             displayName = id+":"+alias;
         else
@@ -52,7 +47,7 @@ public class LeaseContext {
                 try {
                     Object lock = LeaseContext.this;
                     synchronized (lock) {
-                        while (!done)
+                        while (tasks.containsKey(alias))
                             lock.wait();
                     }
                 } catch (InterruptedException e) {
@@ -103,14 +98,24 @@ public class LeaseContext {
      * Cancels all the in-progress tasks.
      */
     public synchronized void end() {
-        // if there's anyone already execcuting, abort them
-        done = true;
-        notifyAll();
-
         for (QueueTaskFuture<?> f :  tasks.values()) {
             f.cancel(true);
         }
+        tasks.clear();
+        notifyAll();
+
         LeaseContextMap.get().remove(this);
+    }
+
+    /**
+     * Removes a single alias.
+     */
+    public synchronized void remove(String alias) {
+        QueueTaskFuture<?> v = tasks.remove(alias);
+        if (v==null)    throw new IllegalArgumentException("Invalid alias: "+alias);
+
+        v.cancel(true);
+        notifyAll();
     }
 
     public Set<String> getAliases() {
