@@ -12,6 +12,8 @@ import org.kohsuke.args4j.CmdLineParser;
 import java.util.List;
 
 /**
+ * Tunnels another SSH session that connects to the "lease-ssh" command.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class LeaseTunnelCommand extends AbstractTunnelCommand {

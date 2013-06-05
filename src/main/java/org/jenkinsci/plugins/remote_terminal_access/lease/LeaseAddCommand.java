@@ -6,6 +6,8 @@ import hudson.Extension;
 import java.io.IOException;
 
 /**
+ * Adds additional slaves to the current lease.
+ *
  * @author Kohsuke Kawaguchi
  */
 @Extension

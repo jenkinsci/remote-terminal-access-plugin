@@ -18,6 +18,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * A lease of executors to a client (which may be outside Jenkins).
+ *
+ * <p>
+ * One instance is created per lease on the master to keep track of leases and what executors are assigned to them.
+ *
  * @author Kohsuke Kawaguchi
  */
 public class LeaseContext {
@@ -26,8 +31,14 @@ public class LeaseContext {
      */
     private final ConcurrentMap<String,QueueTaskFuture<?>> tasks = new ConcurrentHashMap<String,QueueTaskFuture<?>>();
 
+    /**
+     * Unique identifier of the lease.
+     */
     public final String id = Util.getDigestOf(UUID.randomUUID().toString()).substring(0,8);
 
+    /**
+     * User name who created it. Used for access control.
+     */
     public final String owner;
 
     public LeaseContext() {
