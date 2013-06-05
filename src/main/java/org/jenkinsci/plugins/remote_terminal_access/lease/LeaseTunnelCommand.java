@@ -37,7 +37,7 @@ public class LeaseTunnelCommand extends AbstractTunnelCommand {
     protected CommandFactory getCommandFactory() {
         return new CommandFactory() {
             public Command createCommand(String command) {
-                return new DiagnoseCommand(new CommandLine(String.format("lease-ssh '%s' '%s' %s",leaseId,alias,command)));
+                return new LeaseSshCommand(new CommandLine(String.format("lease-ssh '%s' '%s' %s",leaseId,alias,command)));
             }
         };
     }
@@ -46,7 +46,7 @@ public class LeaseTunnelCommand extends AbstractTunnelCommand {
     protected Factory<Command> getShellFactory() {
         return new Factory<Command>() {
             public Command create() {
-                return new DiagnoseCommand(new CommandLine(String.format("lease-ssh '%s' '%s'",leaseId,alias)));
+                return new LeaseSshCommand(new CommandLine(String.format("lease-ssh '%s' '%s'",leaseId,alias)));
             }
         };
     }

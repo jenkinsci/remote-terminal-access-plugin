@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.jenkins-ci.modules</groupId>
       <artifactId>sshd</artifactId>
-      <version>1.4</version>
+      <version>1.5</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

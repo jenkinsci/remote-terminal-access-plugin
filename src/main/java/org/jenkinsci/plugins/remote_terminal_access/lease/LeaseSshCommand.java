@@ -27,7 +27,7 @@ public class LeaseSshCommand extends AbstractRemoteSshCommand {
     @Argument(metaVar="ALIAS",index=1,required=true)
     String alias;
 
-    @Argument()
+    @Argument(index=2)
     @Option(name="--",handler=StopOptionHandler.class)
     final List<String> rest = new ArrayList<String>();
 

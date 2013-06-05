@@ -126,7 +126,9 @@ public abstract class AbstractRemoteSshCommand extends AsynchronousCommand {
         if (w!=null && h!=null)
             proc.setWindowSize(Integer.parseInt(w),Integer.parseInt(h));
 
-        FlushStreamCopyThread t1 = new FlushStreamCopyThread(getCmdLine() + " stdout pump", proc.getInputStream(), getOutputStream(), true);
+        // TODO: leaving the stream open to avoid "SshException: Already closed" in AsynchronousCommand.java:107 where we do out.flush
+        // this should be fixed in the core
+        FlushStreamCopyThread t1 = new FlushStreamCopyThread(getCmdLine() + " stdout pump", proc.getInputStream(), getOutputStream(), false);
         FlushStreamCopyThread t2 = new FlushStreamCopyThread(getCmdLine() + " stdin pump", getInputStream(), proc.getOutputStream(), true);
         t1.start();
         t2.start();
