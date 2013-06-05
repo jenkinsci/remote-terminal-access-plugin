@@ -113,6 +113,7 @@ public class LeaseFile implements Serializable {
                             sshPort, sshHost, id, alias);
                     pw.println();
                 }
+                pw.close();
 
                 return null;
             }
