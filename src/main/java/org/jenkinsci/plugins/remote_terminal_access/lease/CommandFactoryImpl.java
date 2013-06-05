@@ -14,7 +14,6 @@ public class CommandFactoryImpl extends SshCommandFactory {
     @Override
     public Command create(CommandLine commandLine) {
         String cmd = commandLine.get(0);
-        // TODO: command name
         if (cmd.equals("leash-ssh"))
             return new LeaseSshCommand(commandLine);
         if (cmd.equals("lease-tunnel"))
