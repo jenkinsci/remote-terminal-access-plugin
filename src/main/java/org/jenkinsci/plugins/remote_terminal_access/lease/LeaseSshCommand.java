@@ -5,14 +5,9 @@ import hudson.model.Executor;
 import org.jenkinsci.main.modules.sshd.SshCommandFactory.CommandLine;
 import org.jenkinsci.plugins.remote_terminal_access.ProcessWithPtyLauncher;
 import org.jenkinsci.plugins.remote_terminal_access.ssh.AbstractRemoteSshCommand;
-import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-import org.kohsuke.args4j.spi.StopOptionHandler;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,15 +16,9 @@ import java.util.List;
  * @author Kohsuke Kawaguchi
  */
 public class LeaseSshCommand extends AbstractRemoteSshCommand {
-    @Argument(metaVar="LEASEID",index=0,required=true)
     String leaseId;
 
-    @Argument(metaVar="ALIAS",index=1,required=true)
     String alias;
-
-    @Argument(index=2)
-    @Option(name="--",handler=StopOptionHandler.class)
-    final List<String> rest = new ArrayList<String>();
 
     public LeaseSshCommand(CommandLine cmdLine) {
         super(cmdLine);
@@ -52,8 +41,12 @@ public class LeaseSshCommand extends AbstractRemoteSshCommand {
 
     @Override
     protected int main(List<String> args) throws IOException, InterruptedException, CmdLineException {
-        new CmdLineParser(this).parseArgument(args);
+        if (args.size()<2)
+            throw new CmdLineException("Not enough arguments. Expecting LEASEID ALIAS [cmd...]");
 
-        return run(rest);
+        leaseId = args.get(0);
+        alias = args.get(1);
+
+        return run(args.subList(2,args.size()));
     }
 }
