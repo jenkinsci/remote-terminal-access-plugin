@@ -14,9 +14,12 @@ import hudson.util.ArgumentListBuilder;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.remote_terminal_access.lease.LeasedTask;
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +39,9 @@ public class ChannelProcessCommand extends CLICommand {
     @Argument(required=true)
     public String labelExpr;
 
+    @Option(name="-J",usage="JVM option")
+    public List<String> jvmOpts = new ArrayList<String>();
+
     @Override
     public String getShortDescription() {
         return "Launch a new JVM on a slave and connect it with the master with remoting";
@@ -54,6 +60,8 @@ public class ChannelProcessCommand extends CLICommand {
                     File slaveJar = Which.jarFile(hudson.remoting.Launcher.class);
 
                     ArgumentListBuilder args = new ArgumentListBuilder().add(javaExe);
+                    for (String jvmOpt : jvmOpts)
+                        args.add(jvmOpt);
                     if(slaveJar.isFile())
                         args.add("-jar").add(slaveJar);
                     else // in production code this never happens, but during debugging this is convenient
