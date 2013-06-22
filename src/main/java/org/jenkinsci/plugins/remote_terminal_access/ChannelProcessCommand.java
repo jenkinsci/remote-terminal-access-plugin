@@ -51,6 +51,7 @@ public class ChannelProcessCommand extends CLICommand {
 
     @Override
     protected int run() throws Exception {
+        Jenkins.getInstance().checkPermission(TerminalSessionAction.ACCESS);
         Label l = Label.parseExpression(labelExpr);
 
         LeasedTask t = new LeasedTask(l,"TODO",-1,new Runnable() {
