@@ -1,14 +1,17 @@
 package org.jenkinsci.plugins.remote_terminal_access;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Proc;
 import hudson.cli.CLICommand;
 import hudson.model.Computer;
+import hudson.model.JDK;
 import hudson.model.Label;
 import hudson.model.Queue.Executable;
 import hudson.model.TaskListener;
 import hudson.model.queue.QueueTaskFuture;
+import hudson.remoting.Channel;
 import hudson.remoting.Which;
 import hudson.util.ArgumentListBuilder;
 import jenkins.model.Jenkins;
@@ -42,6 +45,9 @@ public class ChannelProcessCommand extends CLICommand {
     @Option(name="-J",usage="JVM option")
     public List<String> jvmOpts = new ArrayList<String>();
 
+    @Option(name="-O",usage="Jdk Name option")
+    public String jdkName;
+
     @Override
     public String getShortDescription() {
         return "Launch a new JVM on a slave and connect it with the master with remoting";
@@ -54,22 +60,26 @@ public class ChannelProcessCommand extends CLICommand {
         Jenkins.getInstance().checkPermission(TerminalSessionAction.ACCESS);
         Label l = Label.parseExpression(labelExpr);
 
-        LeasedTask t = new LeasedTask(l,"TODO",-1,new Runnable() {
+        LeasedTask t = new LeasedTask(l, Channel.current().getName(),-1,new Runnable() {
             public void run() {
                 try {
-                    String javaExe = System.getProperty("java.home") + "/bin/java";
+                    TaskListener taskListener = TaskListener.NULL;  // TODO
+                    Computer computer = Computer.currentComputer();
+                    EnvVars envVars = getEnvVars(taskListener, computer);
                     File slaveJar = Which.jarFile(hudson.remoting.Launcher.class);
 
-                    ArgumentListBuilder args = new ArgumentListBuilder().add(javaExe);
+                    ArgumentListBuilder args = new ArgumentListBuilder().add("java");
                     for (String jvmOpt : jvmOpts)
                         args.add(jvmOpt);
-                    if(slaveJar.isFile())
+                    if(slaveJar.isFile()) {
                         args.add("-jar").add(slaveJar);
+                    }
                     else // in production code this never happens, but during debugging this is convenient
+                    {
                         args.add("-cp").add(slaveJar).add(hudson.remoting.Launcher.class.getName());
+                    }
 
-                    TaskListener taskListener = TaskListener.NULL;  // TODO
-                    Launcher l = Computer.currentComputer().getNode().createLauncher(taskListener);
+                    Launcher l = computer.getNode().createLauncher(taskListener).decorateByEnv(envVars);
 
 
                     Proc p = l.launch().cmds(args).stdout(stdout).stdin(stdin).stderr(stderr).start();
@@ -82,6 +92,15 @@ public class ChannelProcessCommand extends CLICommand {
                 } catch (IOException e) {
                     e.printStackTrace(); // TODO
                 }
+            }
+
+            private EnvVars getEnvVars(TaskListener taskListener, Computer computer) throws IOException, InterruptedException {
+                EnvVars envVars = computer.getEnvironment();
+                JDK jdk = Jenkins.getInstance().getJDK(jdkName);
+                if (jdk != null) {
+                    jdk.forNode(computer.getNode(), taskListener).buildEnvVars(envVars);
+                }
+                return envVars;
             }
         });
 
