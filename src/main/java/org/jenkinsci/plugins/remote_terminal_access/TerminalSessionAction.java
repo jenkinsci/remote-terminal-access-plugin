@@ -167,6 +167,6 @@ public class TerminalSessionAction extends Environment implements Action {
         return null;
     }
 
-    public static final PermissionGroup PERMISSIONS = Run.PERMISSIONS;
+    public static final PermissionGroup PERMISSIONS = new PermissionGroup(TerminalSessionAction.class, Messages._TerminalSessionAction_Permissions_Title());
     public static final Permission ACCESS = new Permission(PERMISSIONS,"Access",Messages._TerminalSessionAction_AccessPermission_Description(), Jenkins.ADMINISTER, PermissionScope.RUN);
 }
