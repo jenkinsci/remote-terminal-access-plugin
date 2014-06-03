@@ -18,7 +18,9 @@ public class TransientBuildActionFactoryImpl extends TransientBuildActionFactory
     public Collection<? extends Action> createFor(Run target) {
         if (target instanceof AbstractBuild) {
             TerminalSessionAction o = TerminalSessionAction.getFor((AbstractBuild) target);
-            return Collections.singleton(o);
+            if (o != null) {
+                return Collections.singleton(o);
+            }
         }
         return Collections.emptyList();
     }

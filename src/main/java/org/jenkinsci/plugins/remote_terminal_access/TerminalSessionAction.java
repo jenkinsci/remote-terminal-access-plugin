@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.CheckForNull;
 
 /**
  * {@link Action} that attach to {@link AbstractBuild} to show the "interactive terminal" option in the UI.
@@ -160,7 +161,7 @@ public class TerminalSessionAction extends Environment implements Action {
         return HttpResponses.forwardToPreviousPage();
     }
 
-    public static TerminalSessionAction getFor(AbstractBuild<?,?> build) {
+    public static @CheckForNull TerminalSessionAction getFor(AbstractBuild<?,?> build) {
         EnvironmentList e = build.getEnvironments();
         if (e!=null)
             return e.get(TerminalSessionAction.class);
