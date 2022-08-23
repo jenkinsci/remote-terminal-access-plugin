@@ -14,6 +14,26 @@
   <name>Remote Terminal Access plugin</name>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/Remote+Terminal+Access+Plugin</url>
 
+  <developers>
+      <developer>
+          <id>kmartens27</id>
+          <name>Kevin Martens</name>
+          <email>contact@kmartens27.dev</email>
+      </developer>
+  </developers>
+
+  <issueManagement>
+      <system>JIRA</system>
+      <url>https://issues.jenkins.io/browse/JENKINS-69069?jql=project%20%3D%20JENKINS%20AND%20component%20%3D%20remote-terminal-access-plugin</url>
+  </issueManagement>
+
+  <scm>
+      <connection>scm:git:https://github.com/jenkinsci/remote-terminal-access-plugin.git</connection>
+      <developerConnection>scm:git:git@github.com:jenkinsci/remote-terminal-access-plugin.git</developerConnection>
+      <url>https://github.com/jenkinsci/remote-terminal-access-plugin</url>
+      <tag>${scmTag}</tag>
+  </scm>
+
   <build>
     <plugins>
       <plugin>
