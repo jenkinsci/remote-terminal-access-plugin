@@ -80,7 +80,7 @@ public class DiagnoseCommand extends AbstractRemoteSshCommand {
             try {// number?
                 int n = Integer.parseInt(buildName);
                 build = p.getBuildByNumber(n);
-            } catch (NumberFormatException _) {
+            } catch (NumberFormatException e) {
                 // permalink?
                 Permalink link = p.getPermalinks().get(buildName);
                 if (link!=null)
